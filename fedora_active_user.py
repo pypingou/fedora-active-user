@@ -16,7 +16,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
-This program performs a number of check to have an educative guess as to
+This program performs a number of check to have an educated guess as to
 whether someone can be consider as 'active' or not within the fedora
 project.
 """
