@@ -77,6 +77,13 @@ _mailing_lists = [
     ]
 
 def _get_bugzilla_history(email):
+    """ Query the bugzilla for all bugs to which the provided email
+    is either assigned or cc'ed. Then for each bug found, print the
+    latest comment from this user (if any).
+
+    :arg email, the email address used in the bugzilla and for which we
+    are searching for activities.
+    """
     bugbz = bzclient.query(
          {'emailtype1': 'substring',
          'emailcc1': True,
@@ -99,6 +106,10 @@ def _get_bugzilla_history(email):
 def _get_koji_history(username):
     """
     Print the last operation made by this user in koji.
+    This is partly stolen from the koji client written by:
+       Dennis Gregorovic <dgregor@redhat.com>
+       Mike McLean <mikem@redhat.com>
+       Cristian Balint <cbalint@redhat.com>
 
     :arg username, the fas username whose history is investigated.
     """
@@ -163,6 +174,12 @@ def _get_last_email_list(email):
 
 
 def _print_histline(entry, **kwargs):
+    """
+    This is mainly stolen from the koji client written by:
+       Dennis Gregorovic <dgregor@redhat.com>
+       Mike McLean <mikem@redhat.com>
+       Cristian Balint <cbalint@redhat.com>
+    """
     event_id, table, create, x = entry
     who = None
     edit = x.get('.related')
@@ -300,6 +317,9 @@ def main():
     if args.username and not args.nokoji:
         print 'Last action on koji:'
         _get_koji_history(args.username)
+    if args.email and not args.nobodhi:
+        print 'Last action on Bodhi:'
+        print '  Not yet implemented'
     if args.email and not args.nobz:
         print 'Bugzilla information:'
         _get_bugzilla_history(args.email)
@@ -310,7 +330,7 @@ def main():
 
 def setup_parser():
     """
-    Set the main arguments.
+    Set the command line arguments.
     """
     parser = argparse.ArgumentParser(
         prog="fedora_active_user")
