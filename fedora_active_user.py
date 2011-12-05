@@ -334,7 +334,7 @@ def main():
     """ The main function."""
     parser = setup_parser()
     args = parser.parse_args()
-    if args.username and not args.nokoji:
+    if args.username and not args.nofas:
         print 'Last login in FAS:'
         _get_last_website_login(args.username)
     if args.username and not args.nokoji:
