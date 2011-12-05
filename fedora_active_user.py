@@ -22,18 +22,21 @@ project.
 """
 
 import argparse
+import fedora_cert
+import getpass
 import koji
 import logging
 import re
 import sys
 import time
 import urllib
-from fedora.client import PackageDB, AppError, ServerError
+from fedora.client import AppError, ServerError, AccountSystem
 from bugzilla.rhbugzilla import RHBugzilla3
 
 
 kojiclient = koji.ClientSession('http://koji.fedoraproject.org/kojihub',
                 {})
+fasclient = AccountSystem()
 bzclient = RHBugzilla3(url='https://bugzilla.redhat.com/xmlrpc.cgi')
 
 
@@ -89,7 +92,7 @@ def _get_bugzilla_history(email):
          'emailcc1': True,
          'bug_status': ['ASSIGNED', 'NEW', 'NEEDINFO'],
          'email1': email})
-    print "{0} bugs assigned or cc to {1} ".format(len(bugbz), email)
+    print "   {0} bugs assigned or cc to {1} ".format(len(bugbz), email)
 
     for bug in bugbz:
         string = None
@@ -172,6 +175,23 @@ def _get_last_email_list(email):
                 print '  ', g.groups()[0], mailinglist
                 break
 
+
+def _get_last_website_login(username):
+    """ Retrieve from FAS the last time this user has been seen.
+
+    :arg username, the fas username from who we would like to see the
+        last connection in FAS.
+    """
+    try:
+        fasusername = fedora_cert.read_user_cert()
+    except:
+        log.debug('Could not read Fedora cert, using login name')
+        fasusername = raw_input('FAS username: ')
+    password = getpass.getpass('   FAS password for %s: ' % username)
+    fasclient.username = fasusername
+    fasclient.password = password
+    person = fasclient.person_by_username(username)
+    print '  ', username, person['last_seen']
 
 def _print_histline(entry, **kwargs):
     """
@@ -315,18 +335,20 @@ def main():
     parser = setup_parser()
     args = parser.parse_args()
     if args.username and not args.nokoji:
+        print 'Last login in FAS:'
+        _get_last_website_login(args.username)
+    if args.username and not args.nokoji:
         print 'Last action on koji:'
         _get_koji_history(args.username)
     if args.email and not args.nobodhi:
         print 'Last action on Bodhi:'
-        print '  Not yet implemented'
+        print '   Not yet implemented'
     if args.email and not args.nobz:
         print 'Bugzilla information:'
         _get_bugzilla_history(args.email)
     if args.email and not args.nolists:
         print 'Last email on mailing list:'
         _get_last_email_list(args.email)
-
 
 def setup_parser():
     """
@@ -339,6 +361,8 @@ def setup_parser():
                 help="FAS username")
     parser.add_argument('--email', dest="email",
                 help="FAS or Bugzilla email looked for")
+    parser.add_argument('--nofas', action='store_true',
+                help="Do not check FAS")
     parser.add_argument('--nokoji', action='store_true',
                 help="Do not check koji")
     parser.add_argument('--nolists', action='store_true',
@@ -354,4 +378,7 @@ def setup_parser():
     return parser
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception, err:
+        print err
