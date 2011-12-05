@@ -187,7 +187,7 @@ def _get_last_website_login(username):
     except:
         log.debug('Could not read Fedora cert, using login name')
         fasusername = raw_input('FAS username: ')
-    password = getpass.getpass('   FAS password for %s: ' % username)
+    password = getpass.getpass('   FAS password for %s: ' % fasusername)
     fasclient.username = fasusername
     fasclient.password = password
     person = fasclient.person_by_username(username)
