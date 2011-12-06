@@ -172,7 +172,7 @@ def _get_last_email_list(email):
         for line in page.split('\n'):
             if 'GMT' in line:
                 g = regex.match(line)
-                print '  ', g.groups()[0], mailinglist
+                print '  ', g.groups()[0].split(' ')[0], mailinglist
                 break
 
 
@@ -191,7 +191,7 @@ def _get_last_website_login(username):
     fasclient.username = fasusername
     fasclient.password = password
     person = fasclient.person_by_username(username)
-    print '  ', username, person['last_seen']
+    print '  ', username, person['last_seen'].split(' ')[0]
 
 def _print_histline(entry, **kwargs):
     """
@@ -322,7 +322,7 @@ def _print_histline(entry, **kwargs):
             fmt = "%s entry created" % table
         else:
             fmt = "%s entry revoked" % table
-    time_str = time.asctime(time.localtime(ts))
+    time_str = time.strftime("%a, %d %b %Y", time.localtime(ts))
     parts  = [time_str, fmt % x]
     if who:
         parts.append(who % x)
