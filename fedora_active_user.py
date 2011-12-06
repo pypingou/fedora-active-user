@@ -100,7 +100,7 @@ def _get_bugzilla_history(email):
         buginfo = bzclient.getbug(bug.bug_id)
         for com in buginfo.longdescs:
             if com['author']['login_name'] == email:
-                string = "  %s %s %s" %(bug.bug_id, com['time'],
+                string = "  %s %s %s" %(bug.bug_id, com['time'].split(' ')[0],
                     com['author']['login_name'])
         if string:
             print string
