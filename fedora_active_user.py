@@ -53,18 +53,18 @@ elif '--verbose' in sys.argv:
 
 
 _table_keys = {
-    'user_perms' : ['user_id', 'perm_id'],
-    'user_groups' : ['user_id', 'group_id'],
-    'tag_inheritance' : ['tag_id', 'parent_id'],
-    'tag_config' : ['tag_id'],
-    'build_target_config' : ['build_target_id'],
-    'external_repo_config' : ['external_repo_id'],
-    'tag_external_repos' : ['tag_id', 'external_repo_id'],
-    'tag_listing' : ['build_id', 'tag_id'],
-    'tag_packages' : ['package_id', 'tag_id'],
-    'group_config' : ['group_id', 'tag_id'],
-    'group_req_listing' : ['group_id', 'tag_id', 'req_id'],
-    'group_package_listing' : ['group_id', 'tag_id', 'package'],
+    'user_perms': ['user_id', 'perm_id'],
+    'user_groups': ['user_id', 'group_id'],
+    'tag_inheritance': ['tag_id', 'parent_id'],
+    'tag_config': ['tag_id'],
+    'build_target_config': ['build_target_id'],
+    'external_repo_config': ['external_repo_id'],
+    'tag_external_repos': ['tag_id', 'external_repo_id'],
+    'tag_listing': ['build_id', 'tag_id'],
+    'tag_packages': ['package_id', 'tag_id'],
+    'group_config': ['group_id', 'tag_id'],
+    'group_req_listing': ['group_id', 'tag_id', 'req_id'],
+    'group_package_listing': ['group_id', 'tag_id', 'package'],
     }
 
 
@@ -132,7 +132,8 @@ def _get_bugzilla_history(email):
         buginfo = bzclient.getbug(bug.bug_id)
         for com in buginfo.longdescs:
             if com['author']['login_name'] == email:
-                string = '  %s %s %s' %(bug.bug_id, com['time'].split(' ')[0],
+                string = '  {0} {1} {2}'.format(bug.bug_id,
+                    com['time'].split(' ')[0],
                     com['author']['login_name'])
         if string:
             print string
@@ -151,6 +152,7 @@ def _get_koji_history(username):
     log.debug('Search last history element in koji for {0}'.format(username))
     histdata = kojiclient.queryHistory(user=username)
     timeline = []
+
     def distinguish_match(x, name):
         """determine if create or revoke event matched"""
         name = '_' + name
@@ -246,7 +248,7 @@ def _print_histline(entry, **kwargs):
         del x['.related']
         bad_edit = None
         if len(edit) != 1:
-            bad_edit = "%i elements" % len(edit)+1
+            bad_edit = '{0} elements'.format(len(edit) + 1)
         other = edit[0]
         #check edit for sanity
         if create or not other[2]:
@@ -254,7 +256,8 @@ def _print_histline(entry, **kwargs):
         if event_id != other[0]:
             bad_edit = "non-matching"
         if bad_edit:
-            print "Warning: unusual edit at event %i in table %s (%s)" % (event_id, table, bad_edit)
+            print 'Warning: unusual edit at event {0} in table {1} ({2})'\
+                ''.format(event_id, table, bad_edit)
             #we'll simply treat them as separate events
             pprint.pprint(entry)
             pprint.pprint(edit)
@@ -264,11 +267,11 @@ def _print_histline(entry, **kwargs):
             return
     if create:
         ts = x['create_ts']
-        if x.has_key('creator_name'):
+        if 'creator_name' in x:
             who = "by %(creator_name)s"
     else:
         ts = x['revoke_ts']
-        if x.has_key('revoker_name'):
+        if 'revoker_name' in x:
             who = "by %(revoker_name)s"
     if table == 'tag_listing':
         if edit:
@@ -362,7 +365,7 @@ def _print_histline(entry, **kwargs):
         else:
             fmt = "%s entry revoked" % table
     time_str = time.strftime("%a, %d %b %Y", time.localtime(ts))
-    parts  = [time_str, fmt % x]
+    parts = [time_str, fmt % x]
     if who:
         parts.append(who % x)
     if create and x['active']:
