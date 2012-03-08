@@ -94,6 +94,7 @@ def _get_bugzilla_history(email):
          'email1': email})
     print "   {0} bugs assigned or cc to {1} ".format(len(bugbz), email)
 
+    print 'Bugzilla information:'
     for bug in bugbz:
         string = None
         log.debug(bug.bug_id)
@@ -153,6 +154,7 @@ def _get_koji_history(username):
         else:
             edit_index.setdefault((table, event_id), {})[key] = entry
             new_timeline.append(entry)
+    print 'Last action on koji:'
     for entry in new_timeline[-1:]:
         _print_histline(entry)
 
@@ -162,6 +164,7 @@ def _get_last_email_list(email):
 
     :arg email, the email address to search on the mailing lists.
     """
+    print 'Last email on mailing list:'
     for mailinglist in _mailing_lists:
         url = "http://search.gmane.org/?query=&group=%s&author=%s&sort=date" \
             % (mailinglist, email)
@@ -187,10 +190,11 @@ def _get_last_website_login(username):
     except:
         log.debug('Could not read Fedora cert, using login name')
         fasusername = raw_input('FAS username: ')
-    password = getpass.getpass('   FAS password for %s: ' % fasusername)
+    password = getpass.getpass('FAS password for %s: ' % fasusername)
     fasclient.username = fasusername
     fasclient.password = password
     person = fasclient.person_by_username(username)
+    print 'Last login in FAS:'
     print '  ', username, person['last_seen'].split(' ')[0]
 
 def _print_histline(entry, **kwargs):
@@ -335,19 +339,15 @@ def main():
     parser = setup_parser()
     args = parser.parse_args()
     if args.username and not args.nofas:
-        print 'Last login in FAS:'
         _get_last_website_login(args.username)
     if args.username and not args.nokoji:
-        print 'Last action on koji:'
         _get_koji_history(args.username)
     if args.email and not args.nobodhi:
         print 'Last action on Bodhi:'
         print '   Not yet implemented'
     if args.email and not args.nobz:
-        print 'Bugzilla information:'
         _get_bugzilla_history(args.email)
     if args.email and not args.nolists:
-        print 'Last email on mailing list:'
         _get_last_email_list(args.email)
 
 def setup_parser():
