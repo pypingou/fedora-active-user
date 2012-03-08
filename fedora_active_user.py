@@ -22,8 +22,10 @@ project.
 """
 
 import argparse
+import datetime
 import fedora_cert
 import getpass
+import json
 import koji
 import logging
 import re
@@ -79,6 +81,34 @@ _mailing_lists = [
     'gmane.linux.redhat.fedora.perl'
     ]
 
+
+def _get_bodhi_history(username):
+    """ Print the last action performed on bodhi by the given FAS user.
+
+    :arg username, the fas username whose action is searched.
+    """
+    log.debug('Querying Bodhi for user: {0}'.format(username))
+    url = "https://admin.fedoraproject.org/updates/user/%s?tg_format=json" \
+            % (username)
+    stream = urllib.urlopen(url)
+    json_str = stream.read()
+    stream.close()
+
+    json_obj = json.loads(json_str)
+
+    date = None
+    pkg = None
+    for update in json_obj['updates']:
+        date2 = datetime.datetime.strptime(update['date_submitted'],
+            '%Y-%m-%d %H:%M:%S')
+        log.debug('Old date: {0} - New date: {1}'.format(date, date2))
+        if not date or date2 > date:
+            date = date2
+            pkg = update['title']
+    print 'Last package update on bodhi:'
+    print '   {0} on package {1}'.format(date, pkg)
+
+
 def _get_bugzilla_history(email):
     """ Query the bugzilla for all bugs to which the provided email
     is either assigned or cc'ed. Then for each bug found, print the
@@ -87,12 +117,13 @@ def _get_bugzilla_history(email):
     :arg email, the email address used in the bugzilla and for which we
     are searching for activities.
     """
+    log.debug('Querying bugzilla for email: {0}'.format(email))
     bugbz = bzclient.query(
          {'emailtype1': 'substring',
          'emailcc1': True,
          'bug_status': ['ASSIGNED', 'NEW', 'NEEDINFO'],
          'email1': email})
-    print "   {0} bugs assigned or cc to {1} ".format(len(bugbz), email)
+    print '   {0} bugs assigned or cc to {1}'.format(len(bugbz), email)
 
     print 'Bugzilla information:'
     for bug in bugbz:
@@ -101,7 +132,7 @@ def _get_bugzilla_history(email):
         buginfo = bzclient.getbug(bug.bug_id)
         for com in buginfo.longdescs:
             if com['author']['login_name'] == email:
-                string = "  %s %s %s" %(bug.bug_id, com['time'].split(' ')[0],
+                string = '  %s %s %s' %(bug.bug_id, com['time'].split(' ')[0],
                     com['author']['login_name'])
         if string:
             print string
@@ -117,12 +148,12 @@ def _get_koji_history(username):
 
     :arg username, the fas username whose history is investigated.
     """
-    log.debug("Search last history element in koji for {0} ".format(username))
+    log.debug('Search last history element in koji for {0}'.format(username))
     histdata = kojiclient.queryHistory(user=username)
     timeline = []
     def distinguish_match(x, name):
         """determine if create or revoke event matched"""
-        name = "_" + name
+        name = '_' + name
         ret = True
         for key in x:
             if key.startswith(name):
@@ -164,9 +195,11 @@ def _get_last_email_list(email):
 
     :arg email, the email address to search on the mailing lists.
     """
+    log.debug('Searching mailing lists for email {0}'.format(mailinglist))
     print 'Last email on mailing list:'
     for mailinglist in _mailing_lists:
-        url = "http://search.gmane.org/?query=&group=%s&author=%s&sort=date" \
+        log.debug('Searching list {0}'.format(mailinglist))
+        url = 'http://search.gmane.org/?query=&group=%s&author=%s&sort=date' \
             % (mailinglist, email)
         stream = urllib.urlopen(url)
         page = stream.read()
@@ -185,6 +218,7 @@ def _get_last_website_login(username):
     :arg username, the fas username from who we would like to see the
         last connection in FAS.
     """
+    log.debug('Querying FAS for user: {0}'.format(username))
     try:
         fasusername = fedora_cert.read_user_cert()
     except:
@@ -196,6 +230,7 @@ def _get_last_website_login(username):
     person = fasclient.person_by_username(username)
     print 'Last login in FAS:'
     print '  ', username, person['last_seen'].split(' ')[0]
+
 
 def _print_histline(entry, **kwargs):
     """
@@ -334,6 +369,7 @@ def _print_histline(entry, **kwargs):
         parts.append("[still active]")
     print '   ' + ' '.join(parts)
 
+
 def main():
     """ The main function."""
     parser = setup_parser()
@@ -342,13 +378,13 @@ def main():
         _get_last_website_login(args.username)
     if args.username and not args.nokoji:
         _get_koji_history(args.username)
-    if args.email and not args.nobodhi:
-        print 'Last action on Bodhi:'
-        print '   Not yet implemented'
+    if args.username and not args.nobodhi:
+        _get_bodhi_history(args.username)
     if args.email and not args.nobz:
         _get_bugzilla_history(args.email)
     if args.email and not args.nolists:
         _get_last_email_list(args.email)
+
 
 def setup_parser():
     """
@@ -376,6 +412,7 @@ def setup_parser():
     parser.add_argument('--debug', action='store_true',
                 help="Outputs bunches of debugging info")
     return parser
+
 
 if __name__ == '__main__':
     try:
