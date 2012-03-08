@@ -32,7 +32,7 @@ import re
 import sys
 import time
 import urllib
-from fedora.client import AppError, ServerError, AccountSystem
+from fedora.client import AccountSystem
 from bugzilla.rhbugzilla import RHBugzilla3
 
 
@@ -223,7 +223,7 @@ def _get_last_website_login(username):
     log.debug('Querying FAS for user: {0}'.format(username))
     try:
         fasusername = fedora_cert.read_user_cert()
-    except:
+    except Exception:
         log.debug('Could not read Fedora cert, using login name')
         fasusername = raw_input('FAS username: ')
     password = getpass.getpass('FAS password for %s: ' % fasusername)
@@ -259,8 +259,6 @@ def _print_histline(entry, **kwargs):
             print 'Warning: unusual edit at event {0} in table {1} ({2})'\
                 ''.format(event_id, table, bad_edit)
             #we'll simply treat them as separate events
-            pprint.pprint(entry)
-            pprint.pprint(edit)
             _print_histline(entry, **kwargs)
             for data in edit:
                 _print_histline(entry, **kwargs)
