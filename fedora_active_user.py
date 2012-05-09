@@ -24,21 +24,10 @@ project.
 import datetime
 import fedora_cert
 import getpass
-import koji
 import logging
 import re
 import time
 import urllib
-from fedora.client import AccountSystem
-from fedora.client.bodhi import BodhiClient
-from bugzilla.rhbugzilla import RHBugzilla3
-
-
-kojiclient = koji.ClientSession('http://koji.fedoraproject.org/kojihub',
-                {})
-fasclient = AccountSystem()
-bodhiclient = BodhiClient("https://admin.fedoraproject.org/updates/")
-bzclient = RHBugzilla3(url='https://bugzilla.redhat.com/xmlrpc.cgi')
 
 
 # Initial simple logging stuff
@@ -81,6 +70,9 @@ def _get_bodhi_history(username):
 
     :arg username, the fas username whose action is searched.
     """
+    from fedora.client.bodhi import BodhiClient
+    bodhiclient = BodhiClient("https://admin.fedoraproject.org/updates/")
+
     log.debug('Querying Bodhi for user: {0}'.format(username))
     json_obj = bodhiclient.send_request("user/%s" % username)
 
@@ -106,6 +98,9 @@ def _get_bugzilla_history(email, all_comments=False):
     :arg all_comments, boolean to display all the comments made by this
     person on the bugzilla.
     """
+    from bugzilla.rhbugzilla import RHBugzilla3
+    bzclient = RHBugzilla3(url='https://bugzilla.redhat.com/xmlrpc.cgi')
+
     log.debug('Querying bugzilla for email: {0}'.format(email))
 
     print("Bugzilla activity")
@@ -150,6 +145,10 @@ def _get_koji_history(username):
 
     :arg username, the fas username whose history is investigated.
     """
+    import koji
+    kojiclient = koji.ClientSession('http://koji.fedoraproject.org/kojihub',
+                                    {})
+
     log.debug('Search last history element in koji for {0}'.format(username))
     histdata = kojiclient.queryHistory(user=username)
     timeline = []
@@ -224,6 +223,9 @@ def _get_last_website_login(username):
     :arg username, the fas username from who we would like to see the
         last connection in FAS.
     """
+    from fedora.client import AccountSystem
+    fasclient = AccountSystem()
+
     log.debug('Querying FAS for user: {0}'.format(username))
     try:
         fasusername = fedora_cert.read_user_cert()
