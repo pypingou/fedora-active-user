@@ -45,11 +45,6 @@ bzclient = RHBugzilla3(url='https://bugzilla.redhat.com/xmlrpc.cgi')
 # Initial simple logging stuff
 logging.basicConfig()
 log = logging.getLogger("pkgdb")
-if '--debug' in sys.argv:
-    log.setLevel(logging.DEBUG)
-    #pkgdbclient.debug = True
-elif '--verbose' in sys.argv:
-    log.setLevel(logging.INFO)
 
 
 _table_keys = {
@@ -392,6 +387,13 @@ def main():
     """ The main function."""
     parser = setup_parser()
     args = parser.parse_args()
+
+    global log
+    if args.debug:
+        log.setLevel(logging.DEBUG)
+        #pkgdbclient.debug = True
+    elif args.verbose:
+        log.setLevel(logging.INFO)
 
     try:
         if args.username and not args.nofas:
