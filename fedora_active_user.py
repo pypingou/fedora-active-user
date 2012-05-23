@@ -393,10 +393,10 @@ def main():
         _get_koji_history(args.username)
     if args.username and not args.nobodhi:
         _get_bodhi_history(args.username)
-    if args.email and not args.nobz:
-        _get_bugzilla_history(args.email, args.all_comments)
     if args.email and not args.nolists:
         _get_last_email_list(args.email)
+    if args.email and not args.nobz:
+        _get_bugzilla_history(args.email, args.all_comments)
 
 
 def setup_parser():
