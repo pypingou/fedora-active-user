@@ -109,34 +109,46 @@ def _get_bodhi_history(username):
     print '   {0} on package {1}'.format(date, pkg)
 
 
-def _get_bugzilla_history(email):
+def _get_bugzilla_history(email, all_comments=False):
     """ Query the bugzilla for all bugs to which the provided email
     is either assigned or cc'ed. Then for each bug found, print the
     latest comment from this user (if any).
 
     :arg email, the email address used in the bugzilla and for which we
     are searching for activities.
+    :arg all_comments, boolean to display all the comments made by this
+    person on the bugzilla.
     """
     log.debug('Querying bugzilla for email: {0}'.format(email))
     bugbz = bzclient.query(
          {'emailtype1': 'substring',
          'emailcc1': True,
+         #'emaillongdesc1': True,
+         'emailassigned_to1': True,
+         'query_format': 'advanced',
+         'order': 'Last Change',
          'bug_status': ['ASSIGNED', 'NEW', 'NEEDINFO'],
          'email1': email})
-    print '   {0} bugs assigned or cc to {1}'.format(len(bugbz), email)
+    print '   {0} bugs assigned, cc or on which {1} commented'.format(
+        len(bugbz), email)
+    # Retrieve the information about this user
+    user = bzclient.getuser(email)
+    bugbz.reverse()
 
-    print 'Bugzilla information:'
-    for bug in bugbz:
+    print 'Last comment on the most recent ticket on bugzilla:'
+    ids = [bug.bug_id for bug in bugbz]
+    for bug in bzclient.getbugs(ids):
         string = None
         log.debug(bug.bug_id)
-        buginfo = bzclient.getbug(bug.bug_id)
-        for com in buginfo.longdescs:
-            if com['author']['login_name'] == email:
-                string = '  {0} {1} {2}'.format(bug.bug_id,
+        for com in bug.longdescs:
+            if com['who'] == user.userid:
+                string = '  #{0} {1} {2}'.format(bug.bug_id,
                     com['time'].split(' ')[0],
-                    com['author']['login_name'])
+                    com['author'])
         if string:
             print string
+            if not all_comments:
+                break
 
 
 def _get_koji_history(username):
@@ -197,7 +209,7 @@ def _get_last_email_list(email):
 
     :arg email, the email address to search on the mailing lists.
     """
-    log.debug('Searching mailing lists for email {0}'.format(mailinglist))
+    log.debug('Searching mailing lists for email {0}'.format(email))
     print 'Last email on mailing list:'
     for mailinglist in _mailing_lists:
         log.debug('Searching list {0}'.format(mailinglist))
@@ -382,7 +394,7 @@ def main():
     if args.username and not args.nobodhi:
         _get_bodhi_history(args.username)
     if args.email and not args.nobz:
-        _get_bugzilla_history(args.email)
+        _get_bugzilla_history(args.email, args.all_comments)
     if args.email and not args.nolists:
         _get_last_email_list(args.email)
 
@@ -408,6 +420,9 @@ def setup_parser():
                 help="Do not check bodhi")
     parser.add_argument('--nobz', action='store_true',
                 help="Do not check bugzilla")
+    parser.add_argument('--all-comments', action='store_true',
+                help="Prints the date of all the comments made by this\
+                person on bugzilla")
     parser.add_argument('--verbose', action='store_true',
                 help="Gives more info about what's going on")
     parser.add_argument('--debug', action='store_true',
