@@ -214,7 +214,7 @@ def _get_last_email_list(email):
     for mailinglist in _mailing_lists:
         log.debug('Searching list {0}'.format(mailinglist))
         url = 'http://search.gmane.org/?query=&group=%s&author=%s&sort=date' \
-            % (mailinglist, email)
+            % (mailinglist, urllib.quote(email))
         stream = urllib.urlopen(url)
         page = stream.read()
         stream.close()
