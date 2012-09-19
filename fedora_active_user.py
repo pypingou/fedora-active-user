@@ -21,7 +21,6 @@ whether someone can be consider as 'active' or not within the fedora
 project.
 """
 
-import argparse
 import datetime
 import fedora_cert
 import getpass
@@ -29,7 +28,6 @@ import json
 import koji
 import logging
 import re
-import sys
 import time
 import urllib
 from fedora.client import AccountSystem
@@ -422,6 +420,8 @@ def setup_parser():
     """
     Set the command line arguments.
     """
+    import argparse
+
     parser = argparse.ArgumentParser(
         prog="fedora_active_user")
     # General connection options
@@ -450,4 +450,5 @@ def setup_parser():
 
 
 if __name__ == '__main__':
+    import sys
     sys.exit(main())
