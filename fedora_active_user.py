@@ -411,6 +411,10 @@ def main():
         else:
             log.error(err)
 
+        return 1
+
+    return 0
+
 
 def setup_parser():
     """
@@ -444,4 +448,4 @@ def setup_parser():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
