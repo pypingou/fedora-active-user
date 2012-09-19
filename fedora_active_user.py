@@ -105,8 +105,8 @@ def _get_bodhi_history(username):
         if not date or date2 > date:
             date = date2
             pkg = update['title']
-    print 'Last package update on bodhi:'
-    print '   {0} on package {1}'.format(date, pkg)
+    print('Last package update on bodhi:')
+    print('   {0} on package {1}'.format(date, pkg))
 
 
 def _get_bugzilla_history(email, all_comments=False):
@@ -131,13 +131,13 @@ def _get_bugzilla_history(email, all_comments=False):
          'order': 'Last Change',
          'bug_status': ['ASSIGNED', 'NEW', 'NEEDINFO'],
          'email1': email})
-    print '   {0} bugs assigned, cc or on which {1} commented'.format(
-        len(bugbz), email)
+    print('   {0} bugs assigned, cc or on which {1} commented'.format(
+        len(bugbz), email))
     # Retrieve the information about this user
     user = bzclient.getuser(email)
     bugbz.reverse()
 
-    print 'Last comment on the most recent ticket on bugzilla:'
+    print('Last comment on the most recent ticket on bugzilla:')
     ids = [bug.bug_id for bug in bugbz]
     for bug in bzclient.getbugs(ids):
         string = None
@@ -148,7 +148,7 @@ def _get_bugzilla_history(email, all_comments=False):
                     com['time'].split(' ')[0],
                     com['author'])
         if string:
-            print string
+            print(string)
             if not all_comments:
                 break
 
@@ -201,7 +201,7 @@ def _get_koji_history(username):
         else:
             edit_index.setdefault((table, event_id), {})[key] = entry
             new_timeline.append(entry)
-    print 'Last action on koji:'
+    print('Last action on koji:')
     for entry in new_timeline[-1:]:
         _print_histline(entry)
 
@@ -212,7 +212,7 @@ def _get_last_email_list(email):
     :arg email, the email address to search on the mailing lists.
     """
     log.debug('Searching mailing lists for email {0}'.format(email))
-    print 'Last email on mailing list:'
+    print('Last email on mailing list:')
     for mailinglist in _mailing_lists:
         log.debug('Searching list {0}'.format(mailinglist))
         url = 'http://search.gmane.org/?query=&group=%s&author=%s&sort=date' \
@@ -224,7 +224,7 @@ def _get_last_email_list(email):
         for line in page.split('\n'):
             if 'GMT' in line:
                 g = regex.match(line)
-                print '  ', g.groups()[0].split(' ')[0], mailinglist
+                print('   %s %s' % (g.groups()[0].split(' ')[0], mailinglist))
                 break
 
         else:
@@ -247,8 +247,8 @@ def _get_last_website_login(username):
     fasclient.username = fasusername
     fasclient.password = password
     person = fasclient.person_by_username(username)
-    print 'Last login in FAS:'
-    print '  ', username, person['last_seen'].split(' ')[0]
+    print('Last login in FAS:')
+    print('   %s %s' % (username, person['last_seen'].split(' ')[0]))
 
 
 def _print_histline(entry, **kwargs):
@@ -273,8 +273,8 @@ def _print_histline(entry, **kwargs):
         if event_id != other[0]:
             bad_edit = "non-matching"
         if bad_edit:
-            print 'Warning: unusual edit at event {0} in table {1} ({2})'\
-                ''.format(event_id, table, bad_edit)
+            print('Warning: unusual edit at event {0} in table {1} ({2})'\
+                ''.format(event_id, table, bad_edit))
             #we'll simply treat them as separate events
             _print_histline(entry, **kwargs)
             for data in edit:
@@ -385,7 +385,7 @@ def _print_histline(entry, **kwargs):
         parts.append(who % x)
     if create and x['active']:
         parts.append("[still active]")
-    print '   ' + ' '.join(parts)
+    print('   ' + ' '.join(parts))
 
 
 def main():
@@ -439,4 +439,4 @@ if __name__ == '__main__':
     try:
         main()
     except Exception, err:
-        print err
+        print(err)
