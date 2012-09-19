@@ -122,15 +122,17 @@ def _get_bugzilla_history(email, all_comments=False):
     print('Last comment on the most recent ticket on bugzilla:')
     ids = [bug.bug_id for bug in bugbz]
     for bug in bzclient.getbugs(ids):
-        string = None
         log.debug(bug.bug_id)
-        for com in bug.longdescs:
-            if com['who'] == user.userid:
-                string = '   #{0} {1} {2}'.format(bug.bug_id,
-                    com['time'].split(' ')[0],
-                    com['author'])
-        if string:
-            print(string)
+
+        user_coms = filter(lambda com: com["who"] == user.userid,
+                           bug.longdescs)
+
+        if user_coms:
+            last_com = user_coms[-1]
+            print('   #{0} {1} {2}'.format(bug.bug_id,
+                                          last_com['time'].split(' ')[0],
+                                          last_com['author']))
+
             if not all_comments:
                 break
 
