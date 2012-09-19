@@ -120,6 +120,8 @@ def _get_bugzilla_history(email, all_comments=False):
     person on the bugzilla.
     """
     log.debug('Querying bugzilla for email: {0}'.format(email))
+
+    print("Bugzilla activity")
     bugbz = bzclient.query(
          {'emailtype1': 'substring',
          'emailcc1': True,
