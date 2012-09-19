@@ -142,7 +142,7 @@ def _get_bugzilla_history(email, all_comments=False):
         log.debug(bug.bug_id)
         for com in bug.longdescs:
             if com['who'] == user.userid:
-                string = '  #{0} {1} {2}'.format(bug.bug_id,
+                string = '   #{0} {1} {2}'.format(bug.bug_id,
                     com['time'].split(' ')[0],
                     com['author'])
         if string:
