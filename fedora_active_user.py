@@ -84,17 +84,16 @@ def _get_bodhi_history(username):
     log.debug('Querying Bodhi for user: {0}'.format(username))
     json_obj = bodhiclient.send_request("user/%s" % username)
 
-    date = None
-    pkg = None
-    for update in json_obj['updates']:
-        date2 = datetime.datetime.strptime(update['date_submitted'],
-            '%Y-%m-%d %H:%M:%S')
-        log.debug('Old date: {0} - New date: {1}'.format(date, date2))
-        if not date or date2 > date:
-            date = date2
-            pkg = update['title']
+    def dategetter(field):
+        def getter(item):
+            return datetime.datetime.strptime(item[field],
+                                              "%Y-%m-%d %H:%M:%S")
+
+        return getter
+
+    latest = sorted(json_obj['updates'], key=dategetter("date_submitted"))[-1]
     print('Last package update on bodhi:')
-    print('   {0} on package {1}'.format(date, pkg))
+    print('   {0} on package {1}'.format(latest["date_submitted"], latest["title"]))
 
 
 def _get_bugzilla_history(email, all_comments=False):
