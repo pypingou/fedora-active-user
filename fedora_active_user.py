@@ -227,6 +227,9 @@ def _get_last_email_list(email):
                 print '  ', g.groups()[0].split(' ')[0], mailinglist
                 break
 
+        else:
+            print("   No activity found on %s" % mailinglist)
+
 
 def _get_last_website_login(username):
     """ Retrieve from FAS the last time this user has been seen.
