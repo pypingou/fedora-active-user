@@ -392,16 +392,24 @@ def main():
     """ The main function."""
     parser = setup_parser()
     args = parser.parse_args()
-    if args.username and not args.nofas:
-        _get_last_website_login(args.username)
-    if args.username and not args.nokoji:
-        _get_koji_history(args.username)
-    if args.username and not args.nobodhi:
-        _get_bodhi_history(args.username)
-    if args.email and not args.nolists:
-        _get_last_email_list(args.email)
-    if args.email and not args.nobz:
-        _get_bugzilla_history(args.email, args.all_comments)
+
+    try:
+        if args.username and not args.nofas:
+            _get_last_website_login(args.username)
+        if args.username and not args.nokoji:
+            _get_koji_history(args.username)
+        if args.username and not args.nobodhi:
+            _get_bodhi_history(args.username)
+        if args.email and not args.nolists:
+            _get_last_email_list(args.email)
+        if args.email and not args.nobz:
+            _get_bugzilla_history(args.email)
+
+    except Exception as err:
+        if args.debug:
+            log.exception(err)
+        else:
+            log.error(err)
 
 
 def setup_parser():
@@ -436,7 +444,4 @@ def setup_parser():
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except Exception, err:
-        print(err)
+    main()
