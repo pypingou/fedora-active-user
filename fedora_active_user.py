@@ -24,19 +24,20 @@ project.
 import datetime
 import fedora_cert
 import getpass
-import json
 import koji
 import logging
 import re
 import time
 import urllib
 from fedora.client import AccountSystem
+from fedora.client.bodhi import BodhiClient
 from bugzilla.rhbugzilla import RHBugzilla3
 
 
 kojiclient = koji.ClientSession('http://koji.fedoraproject.org/kojihub',
                 {})
 fasclient = AccountSystem()
+bodhiclient = BodhiClient("https://admin.fedoraproject.org/updates/")
 bzclient = RHBugzilla3(url='https://bugzilla.redhat.com/xmlrpc.cgi')
 
 
@@ -81,13 +82,7 @@ def _get_bodhi_history(username):
     :arg username, the fas username whose action is searched.
     """
     log.debug('Querying Bodhi for user: {0}'.format(username))
-    url = "https://admin.fedoraproject.org/updates/user/%s?tg_format=json" \
-            % (username)
-    stream = urllib.urlopen(url)
-    json_str = stream.read()
-    stream.close()
-
-    json_obj = json.loads(json_str)
+    json_obj = bodhiclient.send_request("user/%s" % username)
 
     date = None
     pkg = None
