@@ -98,8 +98,8 @@ def _get_bugzilla_history(email, all_comments=False):
     :arg all_comments, boolean to display all the comments made by this
     person on the bugzilla.
     """
-    from bugzilla.rhbugzilla import RHBugzilla3
-    bzclient = RHBugzilla3(url='https://bugzilla.redhat.com/xmlrpc.cgi')
+    from bugzilla.rhbugzilla import RHBugzilla
+    bzclient = RHBugzilla(url='https://bugzilla.redhat.com/xmlrpc.cgi')
 
     log.debug('Querying bugzilla for email: {0}'.format(email))
 
@@ -107,7 +107,6 @@ def _get_bugzilla_history(email, all_comments=False):
     bugbz = bzclient.query(
          {'emailtype1': 'substring',
          'emailcc1': True,
-         #'emaillongdesc1': True,
          'emailassigned_to1': True,
          'query_format': 'advanced',
          'order': 'Last Change',
@@ -123,14 +122,15 @@ def _get_bugzilla_history(email, all_comments=False):
     ids = [bug.bug_id for bug in bugbz]
     for bug in bzclient.getbugs(ids):
         log.debug(bug.bug_id)
-
-        user_coms = filter(lambda com: com["who"] == user.userid,
+        user_coms = filter(lambda com: com["creator_id"] == user.userid,
                            bug.longdescs)
 
         if user_coms:
             last_com = user_coms[-1]
+            converted = datetime.datetime.strptime(last_com['time'].value,
+                                                   "%Y%m%dT%H:%M:%S")
             print('   #{0} {1} {2}'.format(bug.bug_id,
-                                          last_com['time'].split(' ')[0],
+                                          converted.strftime('%Y-%m-%d'),
                                           last_com['author']))
 
             if not all_comments:
