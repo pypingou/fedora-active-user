@@ -24,6 +24,7 @@ project.
 import datetime
 import fedora_cert
 import getpass
+import json
 import logging
 import re
 import time
@@ -219,6 +220,28 @@ def _get_last_email_list(email):
             print("   No activity found on %s" % mailinglist)
 
 
+def _get_fedmsg_history(username):
+    """ Using datagrepper, returns the last 10 actions of the user
+    according to his/her username over the last year.
+
+    :arg username, the fas username whose action is searched.
+    """
+    log.debug('Searching datagrepper for the action of {0}'.format(
+        username))
+    print('Last actions performed according to fedmsg:')
+    url = 'https://apps.fedoraproject.org/datagrepper/raw'\
+        '?user=%s&order=desc&delta=31104000&meta=subtitle&'\
+        'rows_per_page=10' % (username)
+    stream = urllib.urlopen(url)
+    page = stream.read()
+    stream.close()
+    jsonobj = json.loads(page)
+    for entry in jsonobj['raw_messages']:
+        print '  - %s on %s' % (entry['meta']['subtitle'],
+        datetime.datetime.fromtimestamp(int(entry['timestamp'])
+        ).strftime('%Y-%m-%d %H:%M:%S'))
+
+
 def _get_last_website_login(username):
     """ Retrieve from FAS the last time this user has been seen.
 
@@ -398,6 +421,8 @@ def main():
             _get_koji_history(args.username)
         if args.username and not args.nobodhi:
             _get_bodhi_history(args.username)
+        if args.username and not args.nofedmsg:
+            _get_fedmsg_history(args.username)
         if args.email and not args.nolists:
             _get_last_email_list(args.email)
         if args.email and not args.nobz:
@@ -437,6 +462,8 @@ def setup_parser():
                 help="Do not check bodhi")
     parser.add_argument('--nobz', action='store_true',
                 help="Do not check bugzilla")
+    parser.add_argument('--nofedmsg', action='store_true',
+                help="Do not check fedmsg")
     parser.add_argument('--all-comments', action='store_true',
                 help="Prints the date of all the comments made by this\
                 person on bugzilla")
