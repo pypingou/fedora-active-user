@@ -10,7 +10,8 @@ The script checks:
 - Last builds on koji
 - Last update on Bodhi (not yet implemented)
 - Last update on bugzilla (takes a while and may not work on F16)
-- Last email set to mailing lists.
+- Last email set to mailing lists
+- Last actions recorded by fedmsg
 
 The mailing lists considered are set at the top of the script, at
 the moment, they are:
