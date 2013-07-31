@@ -239,7 +239,18 @@ def _get_fedmsg_history(username):
     for entry in jsonobj['raw_messages']:
         print '  - %s on %s' % (entry['meta']['subtitle'],
         datetime.datetime.fromtimestamp(int(entry['timestamp'])
-        ).strftime('%Y-%m-%d %H:%M:%S'))
+        ).strftime('%Y-%m-%d %H:%M:%S')),
+        if 'meetbot' in entry['topic']:
+            if username in entry['msg']['chairs']:
+                print "(%s was a chair)" % username,
+            elif username in entry['msg']['attendees']:
+                print "(%s participated)" % username,
+            else:
+                # datagrepper returned this message for our user, but the user
+                # doesn't appear in the message.  How?
+                raise ValueError("This shouldn't happen.")
+
+        print
 
 
 def _get_last_website_login(username):
