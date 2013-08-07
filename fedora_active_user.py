@@ -83,10 +83,13 @@ def _get_bodhi_history(username):
                                               "%Y-%m-%d %H:%M:%S")
 
         return getter
-
-    latest = sorted(json_obj['updates'], key=dategetter("date_submitted"))[-1]
+    
     print('Last package update on bodhi:')
-    print('   {0} on package {1}'.format(latest["date_submitted"], latest["title"]))
+    if json_obj['updates']:
+        latest = sorted(json_obj['updates'], key=dategetter("date_submitted"))[-1]
+        print('   {0} on package {1}'.format(latest["date_submitted"], latest["title"]))
+    else:
+        print('   No activity found on bodhi')
 
 
 def _get_bugzilla_history(email, all_comments=False):
