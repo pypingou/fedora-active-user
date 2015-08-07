@@ -136,7 +136,7 @@ def _get_bugzilla_history(email, all_comments=False):
             last_com = user_coms[-1]
             converted = datetime.datetime.strptime(last_com['time'].value,
                                                    "%Y%m%dT%H:%M:%S")
-            print('   #{0} {1} {2}'.format(bug.bug_id,
+            print(u'   #{0} {1} {2}'.format(bug.bug_id,
                                            converted.strftime('%Y-%m-%d'),
                                            last_com['author']))
 
