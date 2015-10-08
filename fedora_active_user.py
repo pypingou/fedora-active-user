@@ -136,7 +136,7 @@ def _get_bugzilla_history(email, all_comments=False):
             last_com = user_coms[-1]
             converted = datetime.datetime.strptime(last_com['time'].value,
                                                    "%Y%m%dT%H:%M:%S")
-            print('   #{0} {1} {2}'.format(bug.bug_id,
+            print(u'   #{0} {1} {2}'.format(bug.bug_id,
                                            converted.strftime('%Y-%m-%d'),
                                            last_com['author']))
 
@@ -243,22 +243,22 @@ def _get_fedmsg_history(username):
     stream.close()
     jsonobj = json.loads(page)
     for entry in jsonobj['raw_messages']:
-        print '  - %s on %s' % (
+        print('  - %s on %s' % (
             entry['meta']['subtitle'],
             datetime.datetime.fromtimestamp(
                 int(entry['timestamp'])
-            ).strftime('%Y-%m-%d %H:%M:%S')),
+            ).strftime('%Y-%m-%d %H:%M:%S'))),
         if 'meetbot' in entry['topic']:
             if username in entry['msg']['chairs']:
-                print "(%s was a chair)" % username,
+                print("(%s was a chair)" % username),
             elif username in entry['msg']['attendees']:
-                print "(%s participated)" % username,
+                print("(%s participated)" % username),
             else:
                 # datagrepper returned this message for our user, but the user
                 # doesn't appear in the message.  How?
                 raise ValueError("This shouldn't happen.")
 
-        print
+        print()
 
 
 def _get_last_website_login(username):
