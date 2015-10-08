@@ -239,6 +239,7 @@ def _get_fedmsg_history(username):
     url = 'https://apps.fedoraproject.org/datagrepper/raw'\
         '?user=%s&order=desc&delta=31104000&meta=subtitle&'\
         'rows_per_page=10' % (username)
+    log.debug(url)
     stream = urllib.urlopen(url)
     page = stream.read()
     stream.close()
