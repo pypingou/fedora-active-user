@@ -72,10 +72,11 @@ def _get_bodhi_history(username):
     :arg username, the fas username whose action is searched.
     """
     from fedora.client.bodhi import BodhiClient
-    bodhiclient = BodhiClient("https://admin.fedoraproject.org/updates/")
+    bodhiclient = BodhiClient("https://bodhi.fedoraproject.org/")
 
     log.debug('Querying Bodhi for user: {0}'.format(username))
-    json_obj = bodhiclient.send_request("user/%s" % username)
+    json_obj = bodhiclient.send_request(
+        "updates/?user=%s" % username, verb='GET')
 
     def dategetter(field):
         def getter(item):
@@ -238,6 +239,7 @@ def _get_fedmsg_history(username):
     url = 'https://apps.fedoraproject.org/datagrepper/raw'\
         '?user=%s&order=desc&delta=31104000&meta=subtitle&'\
         'rows_per_page=10' % (username)
+    log.debug(url)
     stream = urllib.urlopen(url)
     page = stream.read()
     stream.close()
