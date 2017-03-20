@@ -156,7 +156,7 @@ def _get_koji_history(username):
     :arg username, the fas username whose history is investigated.
     """
     import koji
-    kojiclient = koji.ClientSession('http://koji.fedoraproject.org/kojihub',
+    kojiclient = koji.ClientSession('https://koji.fedoraproject.org/kojihub',
                                     {})
 
     log.debug('Search last history element in koji for {0}'.format(username))
