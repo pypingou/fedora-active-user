@@ -26,3 +26,5 @@ the moment, they are:
   fedora.kde
   fedora.perl
 They are checked using gmane's function to search by sender's email.
+
+This script depends on the [fedora-cert package](https://pagure.io/fedora-packager).
