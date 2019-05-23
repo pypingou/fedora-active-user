@@ -29,11 +29,12 @@ import logging
 import re
 import time
 import urllib
+from bs4 import BeautifulSoup
 
 
 # Initial simple logging stuff
 logging.basicConfig()
-log = logging.getLogger("active-user")
+log = logging.getLogger("fedora-active-user")
 
 
 _table_keys = {
@@ -53,16 +54,16 @@ _table_keys = {
 
 
 _mailing_lists = [
-    'gmane.linux.redhat.fedora.devel',
-    'gmane.linux.redhat.fedora.artwork',
-    'gmane.linux.redhat.fedora.desktop',
-    'gmane.linux.redhat.fedora.epel.devel',
-    'gmane.linux.redhat.fedora.extras.packaging',
-    'gmane.linux.redhat.fedora.fonts',
-    'gmane.linux.redhat.fedora.general',
-    'gmane.linux.redhat.fedora.infrastructure',
-    'gmane.linux.redhat.fedora.kde',
-    'gmane.linux.redhat.fedora.perl'
+    'devel@lists.fedoraproject.org',
+    'users@lists.fedoraproject.org',
+    'freeipa-users@lists.fedorahosted.org',
+    'infrastructure@lists.fedoraproject.org',
+    'test@lists.fedoraproject.org',
+    'magazine@lists.fedoraproject.org',
+    'trans@lists.fedoraproject.org',
+    'kde@lists.fedoraproject.org',
+    'epel-devel@lists.fedoraproject.org',
+    'sssd-users@lists.fedorahosted.org'
 ]
 
 
@@ -120,32 +121,35 @@ def _get_bugzilla_history(email, all_comments=False):
         'bug_status': ['ASSIGNED', 'NEW', 'NEEDINFO'],
         'email1': email
     })
-    print('   {0} bugs assigned, cc or on which {1} commented'.format(
-        len(bugbz), email))
     # Retrieve the information about this user
     user = bzclient.getuser(email)
+    print('   {0} bugs assigned, cc or on which {1}({2}) commented'.format(
+        len(bugbz), email, user.userid))
     bugbz.reverse()
 
-    print('Last comment on the most recent ticket on bugzilla:')
+    print('   Last comment on the most recent ticket on bugzilla:')
     ids = [bug.bug_id for bug in bugbz]
-    for bug in bzclient.getbugs(ids):
+    for bug in list(bzclient.getbugs(ids)):
         log.debug(bug.bug_id)
-        user_coms = filter(lambda com: com["creator_id"] == user.userid,
+        if sys.version_info[0] >= 3:
+            user_coms = list(filter(lambda com: com["creator_id"] == user.userid, bug.longdescs))
+        else:
+            user_coms = filter(lambda com: com["creator_id"] == user.userid,
                            bug.longdescs)
 
         if user_coms:
             last_com = user_coms[-1]
             converted = datetime.datetime.strptime(last_com['time'].value,
                                                    "%Y%m%dT%H:%M:%S")
-            print(u'   #{0} {1} {2}'.format(bug.bug_id,
-                                           converted.strftime('%Y-%m-%d'),
-                                           last_com['author']))
+            print(u'      #{0} {1} {2}'.format(bug.bug_id,
+                                               converted.strftime('%Y-%m-%d'),
+                                               last_com['creator']))
 
-            if not all_comments:
-                break
+        if not all_comments:
+            break
 
 
-def _get_koji_history(username):
+def _get_koji_history(username, all_actions=False):
     """
     Print the last operation made by this user in koji.
     This is partly stolen from the koji client written by:
@@ -180,7 +184,7 @@ def _get_koji_history(username):
                 #pprint.pprint(timeline[-1])
             if distinguish_match(x, 'created'):
                 timeline.append((x['create_event'], table, 1, x))
-    timeline.sort()
+    timeline.sort(key=lambda x: x[-1]['create_ts'], reverse=False)
     #group edits together
     new_timeline = []
     last_event = None
@@ -197,34 +201,46 @@ def _get_koji_history(username):
         else:
             edit_index.setdefault((table, event_id), {})[key] = entry
             new_timeline.append(entry)
-    print('Last action on koji:')
-    for entry in new_timeline[-1:]:
-        _print_histline(entry)
+    if all_actions:
+        print('All actions on koji:')
+        for entry in new_timeline:
+            _print_histline(entry)
+    else:
+        print('Last action on koji:')
+        for entry in new_timeline[-1:]:
+            _print_histline(entry)
 
 
-def _get_last_email_list(email):
-    """ Using gname, let's find the last email sent by this email.
+def _get_last_email_list(username):
+    """ Using lists.fedoraproject.org, let's find the last email sent by this username.
 
-    :arg email, the email address to search on the mailing lists.
+    :arg username, the username to search on the mailing lists.
     """
-    log.debug('Searching mailing lists for email {0}'.format(email))
-    print('Last email on mailing list:')
+    log.debug('Searching mailing lists for username {0}'.format(username))
+    print('Last email on archived mailing list:')
     for mailinglist in _mailing_lists:
         log.debug('Searching list {0}'.format(mailinglist))
-        url = 'http://search.gmane.org/?query=&group=%s&author=%s&sort=date' \
-            % (mailinglist, urllib.quote(email))
-        stream = urllib.urlopen(url)
-        page = stream.read()
-        stream.close()
-        regex = re.compile(r'.*(\d\d\d\d-\d\d-\d\d).*')
-        for line in page.split('\n'):
-            if 'GMT' in line:
-                g = regex.match(line)
-                print('   %s %s' % (g.groups()[0].split(' ')[0], mailinglist))
-                break
-
+        if sys.version_info[0] >= 3:
+            import urllib.parse
+            import urllib.request
+            url = 'https://lists.fedoraproject.org/archives/search?mlist=%s&q=%s' \
+                % (urllib.parse.quote(mailinglist), urllib.parse.quote(username))
+            stream = urllib.request.urlopen(url)
         else:
-            print("   No activity found on %s" % mailinglist)
+            url = 'https://lists.fedoraproject.org/archives/search?mlist=%s&q=%s' \
+                % (urllib.quote(mailinglist), urllib.quote(username))
+            stream = urllib.urlopen(url)
+        html = stream.read()
+        stream.close()
+        
+        soup = BeautifulSoup(html, "lxml")
+        try:
+            date = soup.find("div",attrs={"class":u"thread-date"}).text
+            msg = date.strip()
+        except Exception as err:
+            msg = "No activity found"
+        
+        print("  - %s: %s" % (mailinglist, msg))
 
 
 def _get_fedmsg_history(username):
@@ -240,27 +256,32 @@ def _get_fedmsg_history(username):
         '?user=%s&order=desc&delta=31104000&meta=subtitle&'\
         'rows_per_page=10' % (username)
     log.debug(url)
-    stream = urllib.urlopen(url)
+    if sys.version_info[0] >= 3:
+        stream = urllib.request.urlopen(url)
+    else:
+        stream = urllib.urlopen(url)
     page = stream.read()
     stream.close()
     jsonobj = json.loads(page)
     for entry in jsonobj['raw_messages']:
-        print('  - %s on %s' % (
-            entry['meta']['subtitle'],
-            datetime.datetime.fromtimestamp(
-                int(entry['timestamp'])
-            ).strftime('%Y-%m-%d %H:%M:%S'))),
+        log.debug(entry)
+        extra_str = ''
         if 'meetbot' in entry['topic']:
             if username in entry['msg']['chairs']:
-                print("(%s was a chair)" % username),
+                extra_str.write("(%s was a chair)" % username)
             elif username in entry['msg']['attendees']:
-                print("(%s participated)" % username),
+                extra_str.write("(%s participated)" % username)
             else:
                 # datagrepper returned this message for our user, but the user
                 # doesn't appear in the message.  How?
                 raise ValueError("This shouldn't happen.")
+        print('  - %s on %s %s' % (
+            entry['meta']['subtitle'],
+            datetime.datetime.fromtimestamp(
+                int(entry['timestamp'])
+            ).strftime('%Y-%m-%d %H:%M:%S'),
+            extra_str))
 
-        print()
 
 
 def _get_last_website_login(username):
@@ -277,7 +298,10 @@ def _get_last_website_login(username):
         fasusername = fedora_cert.read_user_cert()
     except Exception:
         log.debug('Could not read Fedora cert, using login name')
-        fasusername = raw_input('FAS username: ')
+        if sys.version_info[0] >= 3:
+            fasusername = input('FAS username: ')
+        else:
+            fasusername = raw_input('FAS username: ')
     password = getpass.getpass('FAS password for %s: ' % fasusername)
     fasclient.username = fasusername
     fasclient.password = password
@@ -455,15 +479,15 @@ def main():
         if args.username and not args.nofas:
             _get_last_website_login(args.username)
         if args.username and not args.nokoji:
-            _get_koji_history(args.username)
+            _get_koji_history(args.username, args.all_koji_actions)
         if args.username and not args.nobodhi:
             _get_bodhi_history(args.username)
         if args.username and not args.nofedmsg:
             _get_fedmsg_history(args.username)
         if args.email and not args.nolists:
-            _get_last_email_list(args.email)
+            _get_last_email_list(args.username)
         if args.email and not args.nobz:
-            _get_bugzilla_history(args.email)
+            _get_bugzilla_history(args.email, args.all_comments)
 
     except Exception as err:
         if args.debug:
@@ -504,6 +528,9 @@ def setup_parser():
     parser.add_argument('--all-comments', action='store_true',
                         help="Prints the date of all the comments made by this"
                              " person on bugzilla")
+    parser.add_argument('--all-koji-actions', action='store_true',
+                        help="Prints all actions made by this"
+                             " person on koji")
     parser.add_argument('--verbose', action='store_true',
                         help="Gives more info about what's going on")
     parser.add_argument('--debug', action='store_true',
