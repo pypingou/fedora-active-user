@@ -1,0 +1,26 @@
+dist: bionic
+language: minimal
+services: docker
+matrix:
+  include:
+    - name: fedora30
+      env:
+        - BASE_IMAGE=fedora:30
+    - name: fedora31
+      env:
+        - BASE_IMAGE=fedora:31
+    - name: python2
+      language: python
+      python: '2.7'
+      install:
+      script: python fedora_active_user.py --help
+  allow_failures:
+  fast_finish: true
+install:
+  - |
+    travis_retry docker build --rm -t fedora-active-user \
+      -f Dockerfile-fedora \
+      --build-arg BASE_IMAGE=${BASE_IMAGE} \
+      .
+script:
+  - docker run --rm -t fedora-active-user python3 fedora_active_user.py --help
