@@ -96,8 +96,8 @@ def _get_bugzilla_history(email, all_comments=False):
     :arg all_comments, boolean to display all the comments made by this
     person on the bugzilla.
     """
-    from bugzilla.rhbugzilla import RHBugzilla
-    bzclient = RHBugzilla(url='https://bugzilla.redhat.com/xmlrpc.cgi')
+    from bugzilla import Bugzilla
+    bzclient = Bugzilla(url='https://bugzilla.redhat.com/xmlrpc.cgi')
 
     log.debug('Querying bugzilla for email: {0}'.format(email))
 
@@ -121,16 +121,26 @@ def _get_bugzilla_history(email, all_comments=False):
     ids = [bug.bug_id for bug in bugbz]
     for bug in bzclient.getbugs(ids):
         log.debug(bug.bug_id)
-        user_coms = filter(lambda com: com["creator_id"] == user.userid,
-                           bug.longdescs)
+        user_coms = [
+            com
+            for com in bug.longdescs
+            if com['creator_id'] == user.userid
+        ]
 
         if user_coms:
             last_com = user_coms[-1]
             converted = datetime.datetime.strptime(last_com['time'].value,
                                                    "%Y%m%dT%H:%M:%S")
-            print(u'   #{0} {1} {2}'.format(bug.bug_id,
-                                           converted.strftime('%Y-%m-%d'),
-                                           last_com['author']))
+            print(
+                u'   #{0} {1} {2}'.format(
+                    bug.bug_id,
+                    converted.strftime('%Y-%m-%d'),
+                    last_com['creator']
+                )
+            )
+
+        else:
+            continue
 
             if not all_comments:
                 break
