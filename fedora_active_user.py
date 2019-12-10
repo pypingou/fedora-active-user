@@ -471,7 +471,6 @@ def main():
     global log
     if args.debug:
         log.setLevel(logging.DEBUG)
-        #pkgdbclient.debug = True
     elif args.verbose:
         log.setLevel(logging.INFO)
 
