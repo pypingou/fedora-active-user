@@ -37,18 +37,23 @@ log = logging.getLogger("active-user")
 
 
 _table_keys = {
-    'user_perms': ['user_id', 'perm_id'],
-    'user_groups': ['user_id', 'group_id'],
-    'tag_inheritance': ['tag_id', 'parent_id'],
-    'tag_config': ['tag_id'],
-    'build_target_config': ['build_target_id'],
-    'external_repo_config': ['external_repo_id'],
-    'tag_external_repos': ['tag_id', 'external_repo_id'],
-    'tag_listing': ['build_id', 'tag_id'],
-    'tag_packages': ['package_id', 'tag_id'],
-    'group_config': ['group_id', 'tag_id'],
-    'group_req_listing': ['group_id', 'tag_id', 'req_id'],
-    'group_package_listing': ['group_id', 'tag_id', 'package'],
+    'user_perms' : ['user_id', 'perm_id'],
+    'user_groups' : ['user_id', 'group_id'],
+    'cg_users' : ['user_id', 'cg_id'],
+    'tag_inheritance' : ['tag_id', 'parent_id'],
+    'tag_config' : ['tag_id'],
+    'tag_extra' : ['tag_id', 'key'],
+    'build_target_config' : ['build_target_id'],
+    'external_repo_config' : ['external_repo_id'],
+    'host_config': ['host_id'],
+    'host_channels': ['host_id', 'channel_id'],
+    'tag_external_repos' : ['tag_id', 'external_repo_id'],
+    'tag_listing' : ['build_id', 'tag_id'],
+    'tag_packages' : ['package_id', 'tag_id'],
+    'tag_package_owners' : ['package_id', 'tag_id'],
+    'group_config' : ['group_id', 'tag_id'],
+    'group_req_listing' : ['group_id', 'tag_id', 'req_id'],
+    'group_package_listing' : ['group_id', 'tag_id', 'package'],
 }
 
 
@@ -139,6 +144,9 @@ def _get_koji_history(username):
        Mike McLean <mikem@redhat.com>
        Cristian Balint <cbalint@redhat.com>
 
+    Note the _table_keys defined above is coming from the same source and may
+    need update every once in a while as well.
+
     :arg username, the fas username whose history is investigated.
     """
     import koji
@@ -151,7 +159,7 @@ def _get_koji_history(username):
 
     def distinguish_match(x, name):
         """determine if create or revoke event matched"""
-        name = '_' + name
+        name = "_" + name
         ret = True
         for key in x:
             if key.startswith(name):
@@ -163,11 +171,10 @@ def _get_koji_history(username):
             if x['revoke_event'] is not None:
                 if distinguish_match(x, 'revoked'):
                     timeline.append((x['revoke_event'], table, 0, x.copy()))
-                #pprint.pprint(timeline[-1])
             if distinguish_match(x, 'created'):
                 timeline.append((x['create_event'], table, 1, x))
-    timeline.sort()
-    #group edits together
+    timeline.sort(key=lambda entry: entry[:3])
+    # group edits together
     new_timeline = []
     last_event = None
     edit_index = {}
@@ -176,6 +183,8 @@ def _get_koji_history(username):
         if event_id != last_event:
             edit_index = {}
             last_event = event_id
+        if table not in _table_keys:
+            continue
         key = tuple([x[k] for k in _table_keys[table]])
         prev = edit_index.get((table, event_id), {}).get(key)
         if prev:
