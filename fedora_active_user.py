@@ -22,13 +22,20 @@ project.
 """
 
 import datetime
-import fedora_cert
 import getpass
 import json
 import logging
 import re
+import sys
 import time
-import urllib
+
+PY3 = sys.version_info[0] >= 3
+
+if PY3:
+    import urllib.parse
+    import urllib.request
+else:
+    import urllib
 
 
 # Initial simple logging stuff
@@ -216,7 +223,10 @@ def _get_last_email_list(email):
     print('Last email on mailing list:')
     url  = "https://lists.fedoraproject.org/archives/api/sender/{0}/emails/".format(email)
     log.debug('Querying {0}'.format(url))
-    stream = urllib.urlopen(url)
+    if PY3:
+        stream = urllib.request.urlopen(url)
+    else:
+        stream = urllib.urlopen(url)
     data = json.loads(stream.read())
     stream.close()
     if not data["count"]:
@@ -247,7 +257,10 @@ def _get_fedmsg_history(username):
         '?user=%s&order=desc&delta=31104000&meta=subtitle&'\
         'rows_per_page=10' % (username)
     log.debug(url)
-    stream = urllib.urlopen(url)
+    if PY3:
+        stream = urllib.request.urlopen(url)
+    else:
+        stream = urllib.urlopen(url)
     page = stream.read()
     stream.close()
     jsonobj = json.loads(page)
@@ -281,10 +294,14 @@ def _get_last_website_login(username):
 
     log.debug('Querying FAS for user: {0}'.format(username))
     try:
+        import fedora_cert
         fasusername = fedora_cert.read_user_cert()
     except Exception:
         log.debug('Could not read Fedora cert, using login name')
-        fasusername = raw_input('FAS username: ')
+        if PY3:
+            fasusername = input('FAS username: ')
+        else:
+            fasusername = raw_input('FAS username: ')
     password = getpass.getpass('FAS password for %s: ' % fasusername)
     fasclient.username = fasusername
     fasclient.password = password
