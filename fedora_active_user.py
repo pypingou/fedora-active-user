@@ -52,20 +52,6 @@ _table_keys = {
 }
 
 
-_mailing_lists = [
-    'gmane.linux.redhat.fedora.devel',
-    'gmane.linux.redhat.fedora.artwork',
-    'gmane.linux.redhat.fedora.desktop',
-    'gmane.linux.redhat.fedora.epel.devel',
-    'gmane.linux.redhat.fedora.extras.packaging',
-    'gmane.linux.redhat.fedora.fonts',
-    'gmane.linux.redhat.fedora.general',
-    'gmane.linux.redhat.fedora.infrastructure',
-    'gmane.linux.redhat.fedora.kde',
-    'gmane.linux.redhat.fedora.perl'
-]
-
-
 def _get_bodhi_history(username):
     """ Print the last action performed on bodhi by the given FAS user.
 
@@ -207,24 +193,26 @@ def _get_last_email_list(email):
 
     :arg email, the email address to search on the mailing lists.
     """
-    log.debug('Searching mailing lists for email {0}'.format(email))
+    log.debug('Searching activity for {0} on the Fedora lists'.format(email))
     print('Last email on mailing list:')
-    for mailinglist in _mailing_lists:
-        log.debug('Searching list {0}'.format(mailinglist))
-        url = 'http://search.gmane.org/?query=&group=%s&author=%s&sort=date' \
-            % (mailinglist, urllib.quote(email))
-        stream = urllib.urlopen(url)
-        page = stream.read()
-        stream.close()
-        regex = re.compile(r'.*(\d\d\d\d-\d\d-\d\d).*')
-        for line in page.split('\n'):
-            if 'GMT' in line:
-                g = regex.match(line)
-                print('   %s %s' % (g.groups()[0].split(' ')[0], mailinglist))
-                break
-
-        else:
-            print("   No activity found on %s" % mailinglist)
+    url  = "https://lists.fedoraproject.org/archives/api/sender/{0}/emails/".format(email)
+    log.debug('Querying {0}'.format(url))
+    stream = urllib.urlopen(url)
+    data = json.loads(stream.read())
+    stream.close()
+    if not data["count"]:
+        print("   No activity found on %s" % mailinglist)
+    else:
+        for entry in data["results"]:
+            print(
+                "  On {0} {1} emailed as {2} on {3}".format(
+                    entry["date"],
+                    email,
+                    entry["sender_name"],
+                    entry["mailinglist"],
+                )
+            )
+        next_url = data["next"]
 
 
 def _get_fedmsg_history(username):
