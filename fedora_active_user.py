@@ -69,7 +69,7 @@ def _get_bodhi_history(username):
 
     :arg username, the fas username whose action is searched.
     """
-    from fedora.client.bodhi import BodhiClient
+    from bodhi.client.bindings import BodhiClient
     bodhiclient = BodhiClient("https://bodhi.fedoraproject.org/")
 
     log.debug('Querying Bodhi for user: {0}'.format(username))
