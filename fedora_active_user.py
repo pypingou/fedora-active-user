@@ -232,7 +232,7 @@ def _get_last_email_list(email):
     data = json.loads(stream.read())
     stream.close()
     if not data["count"]:
-        print("   No activity found on %s" % mailinglist)
+        print("   No activity found on Fedora mailing lists")
     else:
         for entry in data["results"]:
             print(
